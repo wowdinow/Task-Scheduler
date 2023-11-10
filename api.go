@@ -14,14 +14,14 @@ type Task struct {
 	Exec     string `json:"exec"`
 }
 
-var TaskStorage []map[cron.EntryID]Task
+var TaskStorage map[cron.EntryID]Task
 
 func GetTasks(c *gin.Context) {
 	var results []map[string]interface{}
 	for _, e := range Cron.Entries() {
 		results = append(results, map[string]interface{}{
-			"Task ID": e.ID,
-			// "task_name":      TaskStorage[e.ID],
+			"Task ID":        e.ID,
+			"Task Name":      TaskStorage[e.ID].TaskName,
 			"Execution Time": e.Next,
 		})
 	}
@@ -35,7 +35,6 @@ func AddTask(c *gin.Context) {
 		return
 	}
 
-	// add cron job
 	eid, err := Cron.AddFunc(task.Cron, func() {
 		ExecuteTask(task.Exec)
 	})
@@ -45,7 +44,7 @@ func AddTask(c *gin.Context) {
 		})
 		return
 	}
-
+	// TaskStorage[cron.EntryID(eid)] = task
 	id := strconv.Itoa(int(eid))
 	c.AbortWithStatusJSON(http.StatusOK, map[string]interface{}{
 		"message": "Success add task with ID : " + id,
@@ -60,7 +59,6 @@ func DeleteTask(c *gin.Context) {
 		return
 	}
 
-	// remove cron job
 	Cron.Remove(cron.EntryID(eid))
 
 	c.AbortWithStatusJSON(http.StatusOK, map[string]interface{}{
